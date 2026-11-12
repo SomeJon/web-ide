@@ -1,10 +1,5 @@
-import { FileSystem } from "@davidsouther/jiffies/lib/esm/fs.js";
-import {
-  Err,
-  isErr,
-  Ok,
-  unwrap,
-} from "@davidsouther/jiffies/lib/esm/result.js";
+import { FileSystem } from "@davidsouther/jiffies/fs.ts";
+import { Err, isErr, Ok, unwrap } from "@davidsouther/jiffies/result.ts";
 import {
   Format,
   KeyboardAdapter,
@@ -106,6 +101,9 @@ export function makeCpuStore(
   let tests: string[] = [];
   let tstName = "";
   let _title: string | undefined;
+  // False when the ROM holds a program from outside `fs`, such as a disk
+  // upload or an unsaved Assembler program. A test's `load` keeps it (#622).
+  let romFromFs = true;
 
   const reducers = {
     update(state: CpuPageState) {
@@ -170,6 +168,7 @@ export function makeCpuStore(
 
     async setPath(_path: string) {
       path = _path;
+      romFromFs = true;
 
       const dir = path.split("/").slice(0, -1).join("/");
       const files = await fs.scandir(dir);
@@ -229,7 +228,9 @@ export function makeCpuStore(
       dispatch.current({ action: "setTitle", payload: undefined });
     },
 
+    // The CPU page calls this before a disk upload fills the ROM.
     clearTest() {
+      romFromFs = false;
       tstName = "";
       this.compileTest(makeTst(), "");
       dispatch.current({ action: "update" });
@@ -261,10 +262,14 @@ export function makeCpuStore(
         rom: test.cpu.ROM,
         doEcho: setStatus,
         doLoad: async (path) => {
+          if (!romFromFs && !test.cpu.ROM.isEmpty()) return;
           let file;
           try {
             file = await fs.readFile(path);
           } catch (_e) {
+            // A test uploaded from disk has a bare path ("Mult.tst"), so
+            // `path` cannot be resolved in `fs`. Keep the loaded ROM (#622).
+            if (!tstPath.includes("/") && !test.cpu.ROM.isEmpty()) return;
             throw new Error(`Cannot find ${path}`);
           }
           const loader = path.endsWith("hack")
@@ -275,6 +280,7 @@ export function makeCpuStore(
           const bytes = await loader(file);
           console.log(bytes);
           test.cpu.ROM.loadBytes(bytes);
+          romFromFs = true;
         },
         compareTo: async (file) => {
           const dir = tstPath.split("/").slice(0, -1).join("/");

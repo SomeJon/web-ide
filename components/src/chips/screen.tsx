@@ -1,4 +1,4 @@
-import { assertExists } from "@davidsouther/jiffies/lib/esm/assert.js";
+import { assertExists } from "@davidsouther/jiffies/assert.ts";
 import { Memory } from "@nand2tetris/simulator/cpu/memory.js";
 import { useCallback, useRef, useState } from "react";
 import { useClockFrame, useClockReset } from "../clockface.js";
@@ -21,7 +21,7 @@ export function reduceScreen(memory: Memory, offset = 0): ScreenMemory {
 
 function get(mem: ScreenMemory, x: number, y: number): COLOR {
   const byte = mem.get(32 * y + ((x / 16) | 0));
-  const bit = byte & (1 << x % 16);
+  const bit = byte & (1 << (x % 16));
   return bit === 0 ? WHITE : BLACK;
 }
 
@@ -61,7 +61,7 @@ export const Screen = ({
   scale?: ScreenScales;
   onScale?: (scale: ScreenScales) => void;
 }) => {
-  const canvas = useRef<HTMLCanvasElement>();
+  const canvas = useRef<HTMLCanvasElement | undefined>(undefined);
   const [screenScale, setScreenScale] = useState<ScreenScales>(scale);
 
   const onScaleCB = (scale: ScreenScales) => {

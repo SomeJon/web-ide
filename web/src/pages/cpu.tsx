@@ -1,18 +1,17 @@
-import { Format } from "@nand2tetris/simulator/cpu/memory.js";
-import { Timer } from "@nand2tetris/simulator/timer.js";
-
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { Keyboard } from "@nand2tetris/components/chips/keyboard";
 import MemoryComponent from "@nand2tetris/components/chips/memory.js";
 import { Screen, ScreenScales } from "@nand2tetris/components/chips/screen.js";
-import { useContext, useEffect, useRef, useState } from "react";
-
-import { Trans } from "@lingui/react/macro";
 import { useStateInitializer } from "@nand2tetris/components/react";
 import { Runbar } from "@nand2tetris/components/runbar";
 import { BaseContext } from "@nand2tetris/components/stores/base.context";
-import { isPath } from "../shell/file_select";
+import { Format } from "@nand2tetris/simulator/cpu/memory.js";
+import { Timer } from "@nand2tetris/simulator/timer.js";
+import { useContext, useEffect, useRef, useState } from "react";
 import { AppContext } from "../App.context";
 import { PageContext } from "../Page.context";
+import { isPath } from "../shell/file_select";
 import { Accordian, Panel } from "../shell/panel";
 import { TestPanel } from "../shell/test_panel";
 import "./cpu.scss";
@@ -21,7 +20,7 @@ export const CPU = () => {
   const { filePicker } = useContext(AppContext);
   const { setTool, stores } = useContext(PageContext);
   const { state, actions, dispatch } = stores.cpu;
-  const { fs } = useContext(BaseContext);
+  const { fs, setStatus } = useContext(BaseContext);
 
   const [tst, setTst] = useStateInitializer(state.test.tst);
   const [out, setOut] = useStateInitializer(state.test.out);
@@ -38,8 +37,8 @@ export const CPU = () => {
     actions.reset();
   }, [tst, cmp, tstPath]);
 
-  const cpuRunner = useRef<Timer>();
-  const testRunner = useRef<Timer>();
+  const cpuRunner = useRef<Timer | undefined>(undefined);
+  const testRunner = useRef<Timer | undefined>(undefined);
   const [runnersAssigned, setRunnersAssigned] = useState(false);
   useEffect(() => {
     cpuRunner.current = new (class CPUTimer extends Timer {
@@ -71,6 +70,7 @@ export const CPU = () => {
       }
 
       override reset() {
+        setStatus("");
         actions.reset();
       }
 
@@ -176,6 +176,7 @@ export const CPU = () => {
               {runnersAssigned && cpuRunner.current && (
                 <Runbar
                   runner={cpuRunner.current}
+                  overrideTooltips={{ step: t`Step Code`, run: t`Run Code` }}
                   speed={state.config.speed}
                   onSpeedChange={(speed) => {
                     dispatch.current({
@@ -222,6 +223,7 @@ export const CPU = () => {
           tstName={state.test.name}
           disabled={!state.test.valid}
           showName={state.tests.length < 2}
+          overrideTooltips={{ step: t`Step Test`, run: t`Run Test` }}
           speed={state.config.testSpeed}
           onSpeedChange={(speed) => {
             dispatch.current({

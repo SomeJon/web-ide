@@ -1,7 +1,7 @@
-import { width } from "@davidsouther/jiffies/lib/esm/dom/css/sizing.js";
+import { width } from "@davidsouther/jiffies/dom/css/sizing.ts";
+import { Action } from "@nand2tetris/simulator/types.js";
 import { useCallback, useState } from "react";
 import { useStateInitializer } from "./react.js";
-import { Action } from "@nand2tetris/simulator/types.js";
 
 const Mode = { VIEW: 0, EDIT: 1 };
 

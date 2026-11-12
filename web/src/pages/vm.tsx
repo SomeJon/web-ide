@@ -1,5 +1,3 @@
-import { useContext, useEffect, useRef, useState } from "react";
-
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { Keyboard } from "@nand2tetris/components/chips/keyboard.js";
@@ -10,15 +8,15 @@ import { Runbar } from "@nand2tetris/components/runbar";
 import { BaseContext } from "@nand2tetris/components/stores/base.context";
 import { DEFAULT_TEST } from "@nand2tetris/components/stores/vm.store.js";
 import { Format } from "@nand2tetris/simulator/cpu/memory.js";
+import { VmFile } from "@nand2tetris/simulator/test/vmtst";
 import { Timer } from "@nand2tetris/simulator/timer.js";
 import { ERRNO, isSysError } from "@nand2tetris/simulator/vm/os/errors.js";
 import { IMPLICIT, SYS_INIT, VmFrame } from "@nand2tetris/simulator/vm/vm.js";
-
-import { VmFile } from "@nand2tetris/simulator/test/vmtst";
+import { useContext, useEffect, useRef, useState } from "react";
 import { AppContext } from "../App.context";
-import { isPath } from "../shell/file_select";
 import { PageContext } from "../Page.context";
 import { Editor } from "../shell/editor";
+import { isPath } from "../shell/file_select";
 import { Panel } from "../shell/panel";
 import { TestPanel } from "../shell/test_panel";
 import "./vm.scss";
@@ -84,8 +82,8 @@ const VM = () => {
     }
   }, [state.controls.exitCode]);
 
-  const vmRunner = useRef<Timer>();
-  const testRunner = useRef<Timer>();
+  const vmRunner = useRef<Timer | undefined>(undefined);
+  const testRunner = useRef<Timer | undefined>(undefined);
   const [runnersAssigned, setRunnersAssigned] = useState(false);
   useEffect(() => {
     vmRunner.current = new (class VMTimer extends Timer {
@@ -196,7 +194,7 @@ const VM = () => {
     try {
       const test = await fs.readFile(tstPath);
       actions.loadTest(tstPath, test);
-    } catch (e) {
+    } catch (_e) {
       // No test file found.
     }
   };
@@ -209,7 +207,7 @@ const VM = () => {
     actions.setAnimate(speed <= 2);
   };
 
-  const stackRef = useRef<Rerenderable>();
+  const stackRef = useRef<Rerenderable | undefined>(undefined);
 
   return (
     <div
@@ -236,7 +234,7 @@ const VM = () => {
                     <button
                       className="flex-0"
                       onClick={load}
-                      data-tooltip="Load files"
+                      data-tooltip={t`Load files`}
                       data-placement="bottom"
                     >
                       📂
@@ -254,7 +252,7 @@ const VM = () => {
       >
         <Editor
           value={state.files.vm}
-          path={path ?? 'vm'}
+          path={path ?? "vm"}
           onChange={(source: string) => {
             actions.setVm(source);
           }}
@@ -417,7 +415,7 @@ function CallStack({
   return (
     <section>
       <p>
-        Call-stack:
+        <Trans>Call-stack:</Trans>
         <code>{callStack(stack, addedSysInit).join(" > ")}</code>
       </p>
     </section>
@@ -437,48 +435,48 @@ function VMStackFrame({
     <section>
       <main>
         <p>
-          Stack:
+          <Trans>Stack:</Trans>
           <code>[{frame.stack.values.join(", ")}]</code>
         </p>
         {frame.usedSegments?.has("local") && (
           <p>
-            local:
+            <Trans>local:</Trans>
             <code>[{frame.locals.values.join(", ")}]</code>
           </p>
         )}
         {frame.usedSegments?.has("argument") && (
           <p>
-            argument:
+            <Trans>argument:</Trans>
             <code>[{frame.args.values.join(", ")}]</code>
           </p>
         )}
         {frame.usedSegments?.has("static") && (
           <p>
-            static:
+            <Trans>static:</Trans>
             <code>[{statics.join(", ")}]</code>
           </p>
         )}
         {frame.usedSegments?.has("pointer") && (
           <p>
-            pointer:
+            <Trans>pointer:</Trans>
             <code>[{`${frame.frame.THIS}, ${frame.frame.THAT}`}]</code>
           </p>
         )}
         {frame.usedSegments?.has("this") && (
           <p>
-            this:
+            <Trans>this:</Trans>
             <code>[{frame.this.values.join(", ")}]</code>
           </p>
         )}
         {frame.usedSegments?.has("that") && (
           <p>
-            that:
+            <Trans>that:</Trans>
             <code>[{frame.that.values.join(", ")}]</code>
           </p>
         )}
         {frame.usedSegments?.has("temp") && (
           <p>
-            temp:
+            <Trans>temp:</Trans>
             <code>[{temp.join(", ")}]</code>
           </p>
         )}

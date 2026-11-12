@@ -1,7 +1,7 @@
-import { assertExists } from "@davidsouther/jiffies/lib/esm/assert.js";
-import { display } from "@davidsouther/jiffies/lib/esm/display.js";
-import { FileSystem } from "@davidsouther/jiffies/lib/esm/fs.js";
-import { Err, isErr, Ok } from "@davidsouther/jiffies/lib/esm/result.js";
+import { assertExists } from "@davidsouther/jiffies/assert.ts";
+import { display } from "@davidsouther/jiffies/display.ts";
+import { FileSystem } from "@davidsouther/jiffies/fs.ts";
+import { Err, isErr, Ok } from "@davidsouther/jiffies/result.ts";
 import {
   BUILTIN_CHIP_PROJECTS,
   CHIP_PROJECTS,
@@ -52,8 +52,8 @@ export function isBuiltinOnly(
   return BUILTIN_CHIP_PROJECTS[project].includes(chipName);
 }
 
-function convertToBuiltin(name: string, hdl: string) {
-  return hdl.replace(/PARTS:([\s\S]*?)\}/, `PARTS:\n\tBUILTIN ${name};`);
+export function convertToBuiltin(name: string, hdl: string) {
+  return hdl.replace(/PARTS:[\s\S]*?(?=CLOCKED|\})/, `\n\tBUILTIN ${name};\n`);
 }
 
 export interface ChipPageState {
@@ -196,8 +196,6 @@ export function makeChipStore(
       state: ChipPageState,
       { chipName, dir }: { chipName: string; dir: string },
     ) {
-      _dir = dir;
-      _chipName = chipName;
       state.controls.chipName = chipName;
       state.title = `${chipName}.hdl`;
       state.controls.tests = Array.from(tests);
@@ -205,7 +203,6 @@ export function makeChipStore(
     },
 
     clearChip(state: ChipPageState) {
-      _chipName = "";
       state.controls.chipName = "";
       state.title = undefined;
       state.controls.tests = [];
@@ -316,6 +313,7 @@ export function makeChipStore(
         await actions.setProject(sortedNames[0]);
       } else {
         dispatch.current({ action: "setChips", payload: [] });
+        _chipName = "";
         dispatch.current({ action: "clearChip" });
       }
     },
@@ -362,6 +360,10 @@ export function makeChipStore(
         await this.initializeTests(dir, name);
       }
 
+      // Update the closure before any dispatch: React applies reducers lazily
+      // during render, so loadBuiltin below must not depend on setChip.
+      _dir = dir;
+      _chipName = name;
       dispatch.current({
         action: "setChip",
         payload: { chipName: name, dir: dir },
@@ -369,7 +371,7 @@ export function makeChipStore(
       dispatch.current({ action: "setFiles", payload: { hdl } });
 
       if (usingBuiltin) {
-        this.loadBuiltin();
+        await this.loadBuiltin();
         dispatch.current({ action: "displayBuiltin" });
       }
     },

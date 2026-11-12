@@ -1,5 +1,6 @@
-import { isErr, unwrap } from "@davidsouther/jiffies/lib/esm/result";
-import { Trans } from "@lingui/react/macro";
+import { isErr, unwrap } from "@davidsouther/jiffies/result.ts";
+import { t } from "@lingui/core/macro";
+import { Plural, Trans } from "@lingui/react/macro";
 import {
   DecorationType,
   DiffDisplay,
@@ -8,7 +9,7 @@ import {
 import { useDialog } from "@nand2tetris/components/dialog";
 import { loadTestFiles } from "@nand2tetris/components/file_utils";
 import { useStateInitializer } from "@nand2tetris/components/react";
-import { RunSpeed, Runbar } from "@nand2tetris/components/runbar.js";
+import { Runbar, RunSpeed } from "@nand2tetris/components/runbar.js";
 import { BaseContext } from "@nand2tetris/components/stores/base.context.js";
 import { Span } from "@nand2tetris/simulator/languages/base";
 import { CMP } from "@nand2tetris/simulator/languages/cmp.js";
@@ -45,6 +46,7 @@ export const TestPanel = ({
   showName = false,
   showLoad = true,
   showClear = false,
+  overrideTooltips,
   speed,
   onSpeedChange,
   prefix,
@@ -60,6 +62,7 @@ export const TestPanel = ({
   showName?: boolean;
   showLoad?: boolean;
   showClear?: boolean;
+  overrideTooltips?: { step?: string; run?: string };
   disabled?: boolean;
   speed?: RunSpeed;
   onSpeedChange?: (speed: number) => void;
@@ -69,7 +72,7 @@ export const TestPanel = ({
   const { filePicker, tracking } = useContext(AppContext);
 
   const [showHighlight, setShowHighlight] = useState(true);
-  const runner = useRef<Timer>();
+  const runner = useRef<Timer | undefined>(undefined);
   useEffect(() => {
     runner.current = new (class ChipTimer extends Timer {
       async reset(): Promise<void> {
@@ -120,8 +123,8 @@ export const TestPanel = ({
   const [name, setName] = useStateInitializer(tstName ?? "");
 
   const loadTest = useCallback(async () => {
-    const file = await filePicker.selectAllowLocal({ 
-      suffix: [".tst", ".cmp"] 
+    const file = await filePicker.selectAllowLocal({
+      suffix: [".tst", ".cmp"],
     });
     if (isPath(file)) {
       const files = await loadTestFiles(fs, file.path);
@@ -134,11 +137,12 @@ export const TestPanel = ({
       const { tst, cmp } = unwrap(files);
       setTst?.(tst);
       setCmp?.(cmp ?? "");
-    } else { // File uploaded
+    } else {
+      // File uploaded
       const selectedFiles = Array.isArray(file) ? file : [file];
-      const tstFile = selectedFiles.find(f => f.name.endsWith('.tst'));
-      const cmpFile = selectedFiles.find(f => f.name.endsWith('.cmp'));
-      
+      const tstFile = selectedFiles.find((f) => f.name.endsWith(".tst"));
+      const cmpFile = selectedFiles.find((f) => f.name.endsWith(".cmp"));
+
       if (tstFile) {
         setTst?.(tstFile.content);
         setName(tstFile.name);
@@ -150,7 +154,7 @@ export const TestPanel = ({
     }
   }, [filePicker, setStatus, fs, setPath, setName, setTst, setCmp]);
 
-  const outputLineCount = (out.match(/\n/g)??[]).length;
+  const outputLineCount = (out.match(/\n/g) ?? []).length;
 
   const [diffDisplay, setDiffDisplay] = useState<DiffDisplay>();
 
@@ -161,11 +165,15 @@ export const TestPanel = ({
   const editWarning = (
     <dialog open={editDialog.isOpen}>
       <article>
-        <header>Warning</header>
+        <header>
+          <Trans>Warning</Trans>
+        </header>
         <main>
           <p>
-            The test script can be edited during this IDE session. In the next
-            session, the original script will be restored.
+            <Trans>
+              The test script can be edited during this IDE session. In the next
+              session, the original script will be restored.
+            </Trans>
             <br />
           </p>
           <div style={{ display: "flex", flexDirection: "row" }}>
@@ -176,7 +184,9 @@ export const TestPanel = ({
                 setSkipWarning(e.target.checked);
               }}
             />
-            <p>Do not show this again</p>
+            <p>
+              <Trans>Do not show this again</Trans>
+            </p>
           </div>
           <p>
             <br />
@@ -189,7 +199,7 @@ export const TestPanel = ({
               editDialog.close();
             }}
           >
-            Ok
+            <Trans>Ok</Trans>
           </button>
         </main>
       </article>
@@ -214,14 +224,14 @@ export const TestPanel = ({
                     {prefix}
                     {showClear && (
                       <button className="flex-0" onClick={clear}>
-                        Clear
+                        <Trans>Clear</Trans>
                       </button>
                     )}
                     {showLoad && (
                       <button
                         className="flex-0"
                         onClick={loadTest}
-                        data-tooltip="Load a test script"
+                        data-tooltip={t`Load a test script`}
                         data-placement="bottom"
                       >
                         📂
@@ -232,6 +242,7 @@ export const TestPanel = ({
                 runner={runner.current}
                 outputLineCount={outputLineCount}
                 disabled={disabled}
+                overrideTooltips={overrideTooltips}
                 speed={speed}
                 onSpeedChange={onSpeedChange}
               />
@@ -241,10 +252,10 @@ export const TestPanel = ({
       }
     >
       <TabList>
-        <Tab title="Test Script" onSelect={() => setSelectedTestTab("tst")}>
+        <Tab title={t`Test Script`} onSelect={() => setSelectedTestTab("tst")}>
           <Editor
             value={tst}
-            path={`${tstName??'test'}.tst`}
+            path={`${tstName ?? "test"}.tst`}
             onChange={onChange}
             grammar={TST.parser}
             language={"tst"}
@@ -252,10 +263,10 @@ export const TestPanel = ({
             highlight={showHighlight ? tstHighlight : undefined}
           />
         </Tab>
-        <Tab title="Compare File" onSelect={() => setSelectedTestTab("cmp")}>
+        <Tab title={t`Compare File`} onSelect={() => setSelectedTestTab("cmp")}>
           <Editor
             value={cmp}
-            path={`${tstName??'test'}.cmp`}
+            path={`${tstName ?? "test"}.cmp`}
             onChange={setCmp}
             grammar={CMP.parser}
             language={"cmp"}
@@ -263,26 +274,36 @@ export const TestPanel = ({
             disabled={true}
           />
         </Tab>
-        <Tab title="Output File" onSelect={() => setSelectedTestTab("out")}>
-          {out == "" && <p>Execute test script to generate output.</p>}
+        <Tab title={t`Output File`} onSelect={() => setSelectedTestTab("out")}>
+          {out == "" && (
+            <p>
+              <Trans>Execute test script to generate output.</Trans>
+            </p>
+          )}
           <Editor
             value={out}
             onChange={() => {
               return;
             }}
             language={"cmp"}
-            path={`${tstName??'test'}.out`}
+            path={`${tstName ?? "test"}.out`}
             disabled={true}
             lineNumberTransform={(_) => ""}
           />
         </Tab>
-        <Tab title="Diff Table" onSelect={() => setSelectedTestTab("diff")}>
-          {out == "" && <p>Execute test script to compare output.</p>}
+        <Tab title={t`Diff Table`} onSelect={() => setSelectedTestTab("diff")}>
+          {out == "" && (
+            <p>
+              <Trans>Execute test script to compare output.</Trans>
+            </p>
+          )}
           {(diffDisplay?.failureNum ?? 0) > 0 && (
             <p>
-              {diffDisplay?.failureNum} comparison failure
-              {diffDisplay?.failureNum === 1 ? "" : "s"}. Scroll down for
-              details
+              <Plural
+                value={diffDisplay?.failureNum ?? 0}
+                one="# comparison failure. Scroll down for details"
+                other="# comparison failures. Scroll down for details"
+              />
             </p>
           )}
           <Editor

@@ -5,6 +5,7 @@ import * as monacoT from "monaco-editor";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { AppContext } from "../App.context";
 import { Decoration, HighlightType } from "./editor";
+import "./monacoSetup";
 
 const isRangeVisible = (
   editor: monacoT.editor.IStandaloneCodeEditor | undefined,
@@ -95,11 +96,13 @@ export const Monaco = ({
   lineNumberTransform?: (n: number) => string;
 }) => {
   const { theme } = useContext(AppContext);
-  const monaco = useRef<typeof monacoT>();
+  const monaco = useRef<typeof monacoT | undefined>(undefined);
   const [height, setHeight] = useState(0);
   const [editorReady, setEditorReady] = useState(false);
 
-  const editor = useRef<monacoT.editor.IStandaloneCodeEditor>();
+  const editor = useRef<monacoT.editor.IStandaloneCodeEditor | undefined>(
+    undefined,
+  );
   const decorations = useRef<string[]>([]);
   const highlight = useRef<Span | number | undefined>(undefined);
   const customDecorations = useRef<Decoration[]>([]);
@@ -266,6 +269,7 @@ export const Monaco = ({
 
   return (
     <MonacoEditor
+      options={{ readOnly: disabled }}
       value={value}
       language={language}
       path={path}

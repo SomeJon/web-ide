@@ -2,7 +2,7 @@ import {
   BaseContext,
   useBaseContext,
 } from "@nand2tetris/components/stores/base.context";
-import { RefObject, useContext, useRef } from "react";
+import { type JSX, RefObject, useContext, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { AppContext, useAppContext } from "../App.context";
 import { PageContext } from "../Page.context";
@@ -38,7 +38,6 @@ function headerButtonFromURL(url: URL, icon: string, tooltip?: string) {
   };
 }
 
-// When updating these, also edit service-worker.ts
 const guideLinks: Record<string, string> = {
   chip: "user_guide/chip.pdf",
   cpu: "user_guide/cpu.pdf",
@@ -103,7 +102,7 @@ const Header = () => {
   const { title, setTool } = useContext(PageContext);
   const { setStatus } = useContext(BaseContext);
 
-  const redirectRefs: Record<string, RefObject<HTMLAnchorElement>> = {};
+  const redirectRefs: Record<string, RefObject<HTMLAnchorElement | null>> = {};
   for (const button of headerButtons) {
     if (button.href) {
       redirectRefs[button.href] = useRef<HTMLAnchorElement>(null);

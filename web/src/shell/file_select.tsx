@@ -1,4 +1,4 @@
-import { FileSystem, Stats } from "@davidsouther/jiffies/lib/esm/fs";
+import { FileSystem, Stats } from "@davidsouther/jiffies/fs.ts";
 import { t } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { useDialog } from "@nand2tetris/components/dialog";
@@ -50,7 +50,7 @@ export function useFilePicker() {
 
   const allowLocal = useRef(false);
 
-  const selected = useRef<(v: FileSelectionRef) => void>();
+  const selected = useRef<(v: FileSelectionRef) => void | undefined>(undefined);
 
   const _select = useCallback(
     async (options: FilePickerOptions): Promise<FileSelectionRef> => {
@@ -263,7 +263,7 @@ export const FilePicker = () => {
       <article className="file-select flex">
         <header>
           <p>
-            <Trans>{t`Choose file`}</Trans>
+            <Trans>Choose file</Trans>
           </p>
           <a
             style={{ color: "rgba(0, 0, 0, 0)" }}
@@ -319,7 +319,9 @@ export const FilePicker = () => {
             {t`Select`}
           </button>
           {!localFsRoot && filePicker.allowLocal && (
-            <button onClick={loadLocal}>Select local file</button>
+            <button onClick={loadLocal}>
+              <Trans>Select local file</Trans>
+            </button>
           )}
           {!localFsRoot && (
             <button

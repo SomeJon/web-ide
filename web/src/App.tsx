@@ -1,38 +1,31 @@
 import { i18n } from "@lingui/core";
 import { I18nProvider } from "@lingui/react";
+import { Trans } from "@lingui/react/macro";
 import {
   BaseContext,
   useBaseContext,
 } from "@nand2tetris/components/stores/base.context.js";
-import { en } from "make-plural/plurals";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import { AppContext, useAppContext } from "./App.context";
+import { ErrorBoundary, RenderError } from "./ErrorBoundary";
 import { registerLanguages } from "./languages/loader";
-import { messages, plMessages } from "./locales";
+import { messages } from "./locales";
+import { PageContextProvider } from "./Page.context";
+import { Redirect } from "./pages/redirect";
 import { FilePicker } from "./shell/file_select";
 import Footer from "./shell/footer";
 import Header from "./shell/header";
 import { Settings } from "./shell/settings";
 import { Tooltip } from "./shell/Tooltip";
 import urls from "./urls";
-
-import { ErrorBoundary, RenderError } from "./ErrorBoundary";
-import { PageContextProvider } from "./Page.context";
-import { Redirect } from "./pages/redirect";
 import "./pico/flex.scss";
 import "./pico/pico.scss";
 import { TrackingBanner } from "./tracking";
 import { updateVersion } from "./versions";
 
-i18n.load("en", messages.messages);
-i18n.load("en-US", messages.messages);
-i18n.load("en-PL", plMessages.messages);
-i18n.loadLocaleData({
-  en: { plurals: en },
-  "en-US": { plurals: en },
-  "en-PL": { plurals: en },
-});
+i18n.load(messages);
+i18n.load("en-US", messages.en);
 i18n.activate(navigator.language);
 
 type STATE = "none" | "initializing" | "initialized";
@@ -80,7 +73,13 @@ function App() {
                 <Header />
                 <main className="flex flex-1">
                   <ErrorBoundary fallback={RenderError}>
-                    <Suspense fallback={<div>Loading...</div>}>
+                    <Suspense
+                      fallback={
+                        <div>
+                          <Trans>Loading...</Trans>
+                        </div>
+                      }
+                    >
                       <Routes>
                         <Route path="/" element={<Redirect />} />
                         {Object.values(urls).map(({ href, target }) => (
@@ -96,7 +95,9 @@ function App() {
               <Tooltip />
             </PageContextProvider>
           ) : (
-            <div>Initializing...</div>
+            <div>
+              <Trans>Initializing...</Trans>
+            </div>
           )}
         </AppContext.Provider>
       </BaseContext.Provider>

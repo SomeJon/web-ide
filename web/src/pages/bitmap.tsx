@@ -1,3 +1,5 @@
+import { t } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Panel } from "../shell/panel";
 import {
@@ -58,7 +60,11 @@ export const BitmapEditor = () => {
     return defaultState;
   };
 
-  const loadGrid = (width: number, height: number, invertMode: boolean): boolean[][] => {
+  const loadGrid = (
+    width: number,
+    height: number,
+    invertMode: boolean,
+  ): boolean[][] => {
     try {
       const saved = localStorage.getItem(GRID_KEY);
       if (saved) {
@@ -78,14 +84,20 @@ export const BitmapEditor = () => {
   const [width, setWidth] = useState(initialState.width);
   const [height, setHeight] = useState(initialState.height);
   const [pixelSize, setPixelSize] = useState(initialState.pixelSize);
-  const [currentIShift, setCurrentIShift] = useState(initialState.currentIShift);
-  const [currentJShift, setCurrentJShift] = useState(initialState.currentJShift);
-  const [marginSaveFrames, setMarginSaveFrames] = useState(initialState.marginSaveFrames);
+  const [currentIShift, setCurrentIShift] = useState(
+    initialState.currentIShift,
+  );
+  const [currentJShift, setCurrentJShift] = useState(
+    initialState.currentJShift,
+  );
+  const [marginSaveFrames, setMarginSaveFrames] = useState(
+    initialState.marginSaveFrames,
+  );
   const [invertMode, setInvertMode] = useState(initialState.invertMode);
   const [comments, setComments] = useState(initialState.comments);
 
   const [grid, setGrid] = useState<boolean[][]>(() =>
-    loadGrid(initialState.width, initialState.height, initialState.invertMode)
+    loadGrid(initialState.width, initialState.height, initialState.invertMode),
   );
 
   const [currentColor, setCurrentColor] = useState<boolean | null>(null);
@@ -118,7 +130,16 @@ export const BitmapEditor = () => {
       comments,
     };
     localStorage.setItem(STATE_KEY, JSON.stringify(state));
-  }, [width, height, pixelSize, currentIShift, currentJShift, marginSaveFrames, invertMode, comments]);
+  }, [
+    width,
+    height,
+    pixelSize,
+    currentIShift,
+    currentJShift,
+    marginSaveFrames,
+    invertMode,
+    comments,
+  ]);
 
   // Save grid to localStorage
   useEffect(() => {
@@ -217,7 +238,11 @@ export const BitmapEditor = () => {
 
               // Also check neighboring columns that will shift into this word during animation
               if (currentJShift > 0) {
-                for (let l = colIndex + 16; l < Math.min(currentJShift, marginSaveFrames) + colIndex + 16; l++) {
+                for (
+                  let l = colIndex + 16;
+                  l < Math.min(currentJShift, marginSaveFrames) + colIndex + 16;
+                  l++
+                ) {
                   if (l >= width) break;
                   if (grid[i]?.[l] !== invertMode) {
                     thisIIn = true;
@@ -225,7 +250,11 @@ export const BitmapEditor = () => {
                   }
                 }
               } else if (currentJShift < 0) {
-                for (let l = colIndex - 1; l > Math.max(currentJShift, -marginSaveFrames) + colIndex - 1; l--) {
+                for (
+                  let l = colIndex - 1;
+                  l > Math.max(currentJShift, -marginSaveFrames) + colIndex - 1;
+                  l--
+                ) {
                   if (l < 0) break;
                   if (grid[i]?.[l] !== invertMode) {
                     thisIIn = true;
@@ -256,7 +285,16 @@ export const BitmapEditor = () => {
 
     const drawHeight = Math.max(bottomI, baseI) - Math.min(topI, baseI);
     return { words, baseI, baseJ, columns, drawHeight };
-  }, [grid, width, height, invertMode, marginType, currentIShift, currentJShift, marginSaveFrames]);
+  }, [
+    grid,
+    width,
+    height,
+    invertMode,
+    marginType,
+    currentIShift,
+    currentJShift,
+    marginSaveFrames,
+  ]);
 
   // Generate code
   const generatedCode = useMemo(() => {
@@ -286,7 +324,10 @@ export const BitmapEditor = () => {
       return code;
     } else {
       // hack assembly
-      const rowsOfWords: Record<string, { coords: [number, number]; col: string }[]> = {};
+      const rowsOfWords: Record<
+        string,
+        { coords: [number, number]; col: string }[]
+      > = {};
       for (const col in words) {
         for (const coords of words[col]) {
           const key = coords[0].toString();
@@ -297,7 +338,8 @@ export const BitmapEditor = () => {
 
       let code = "(" + subroutineName + ")\n";
       if (comments) {
-        code += "\t// put bitmap location value in R12\n\t// put code return address in R13\n";
+        code +=
+          "\t// put bitmap location value in R12\n\t// put code return address in R13\n";
       }
       code += "\t@SCREEN\n\tD=A\n\t@R12\n\tAD=D+M\n";
 
@@ -313,13 +355,25 @@ export const BitmapEditor = () => {
         if (comments) code += "\t// row " + (row + 1) + "\n";
         for (const data of rowsOfWords[row.toString()]) {
           const { coords, col } = data;
-          const value = getWordValue(grid, coords[0], coords[1], invertMode, width);
+          const value = getWordValue(
+            grid,
+            coords[0],
+            coords[1],
+            invertMode,
+            width,
+          );
           let addrIncrement = 0;
           if (previousCoords !== null && previousCol !== null) {
             addrIncrement =
-              (coords[0] - previousCoords[0]) * 32 + (parseInt(col) - parseInt(previousCol));
+              (coords[0] - previousCoords[0]) * 32 +
+              (parseInt(col) - parseInt(previousCol));
           }
-          const hackCode = generateHackAssemblyCode(addrIncrement, value, dHoldsAddr, comments);
+          const hackCode = generateHackAssemblyCode(
+            addrIncrement,
+            value,
+            dHoldsAddr,
+            comments,
+          );
           dHoldsAddr = hackCode.dHoldsAddr;
           code += hackCode.code;
           previousCoords = coords;
@@ -331,7 +385,16 @@ export const BitmapEditor = () => {
       code += "\t@R13\n\tA=M\n\tD;JMP\n";
       return code;
     }
-  }, [grid, codeMode, comments, pauseCode, getUsedWords, invertMode, width, baseTopLeft]);
+  }, [
+    grid,
+    codeMode,
+    comments,
+    pauseCode,
+    getUsedWords,
+    invertMode,
+    width,
+    baseTopLeft,
+  ]);
 
   // Word edge columns for styling
   const wordEdgeColumns = useMemo(() => {
@@ -345,19 +408,16 @@ export const BitmapEditor = () => {
   }, [obviousStyling, getUsedWords]);
 
   // Drawing event handlers
-  const startDraw = useCallback(
-    (i: number, j: number) => {
-      // use functional update to avoid reading stale grid from closure
-      setGrid((prev) => {
-        const newGrid = prev.map((row) => [...row]);
-        const newColor = !newGrid[i][j];
-        newGrid[i][j] = newColor;
-        setCurrentColor(newColor);
-        return newGrid;
-      });
-    },
-    []
-  );
+  const startDraw = useCallback((i: number, j: number) => {
+    // use functional update to avoid reading stale grid from closure
+    setGrid((prev) => {
+      const newGrid = prev.map((row) => [...row]);
+      const newColor = !newGrid[i][j];
+      newGrid[i][j] = newColor;
+      setCurrentColor(newColor);
+      return newGrid;
+    });
+  }, []);
 
   const moveDraw = useCallback(
     (i: number, j: number) => {
@@ -368,7 +428,7 @@ export const BitmapEditor = () => {
         return newGrid;
       });
     },
-    [currentColor]
+    [currentColor],
   );
 
   const stopDraw = useCallback(() => {
@@ -376,7 +436,8 @@ export const BitmapEditor = () => {
   }, []);
 
   const handleResize = useCallback(() => {
-    const newWidth = Math.floor(parseInt(widthInputRef.current?.value || "48") / 16) * 16;
+    const newWidth =
+      Math.floor(parseInt(widthInputRef.current?.value || "48") / 16) * 16;
     const newHeight = parseInt(heightInputRef.current?.value || "32");
     const newPixelSize = parseInt(pixelSizeInputRef.current?.value || "16");
 
@@ -409,9 +470,12 @@ export const BitmapEditor = () => {
     setGrid(createGrid(defaultState.width, defaultState.height, false));
 
     // Reset input fields
-    if (widthInputRef.current) widthInputRef.current.value = defaultState.width.toString();
-    if (heightInputRef.current) heightInputRef.current.value = defaultState.height.toString();
-    if (pixelSizeInputRef.current) pixelSizeInputRef.current.value = defaultState.pixelSize.toString();
+    if (widthInputRef.current)
+      widthInputRef.current.value = defaultState.width.toString();
+    if (heightInputRef.current)
+      heightInputRef.current.value = defaultState.height.toString();
+    if (pixelSizeInputRef.current)
+      pixelSizeInputRef.current.value = defaultState.pixelSize.toString();
     if (marginFramesInputRef.current) marginFramesInputRef.current.value = "1";
   }, []);
 
@@ -513,9 +577,12 @@ export const BitmapEditor = () => {
   // keep uncontrolled input refs in sync when state changes (consistent with other pages)
   useEffect(() => {
     if (widthInputRef.current) widthInputRef.current.value = width.toString();
-    if (heightInputRef.current) heightInputRef.current.value = height.toString();
-    if (pixelSizeInputRef.current) pixelSizeInputRef.current.value = pixelSize.toString();
-    if (marginFramesInputRef.current) marginFramesInputRef.current.value = marginSaveFrames.toString();
+    if (heightInputRef.current)
+      heightInputRef.current.value = height.toString();
+    if (pixelSizeInputRef.current)
+      pixelSizeInputRef.current.value = pixelSize.toString();
+    if (marginFramesInputRef.current)
+      marginFramesInputRef.current.value = marginSaveFrames.toString();
   }, [width, height, pixelSize, marginSaveFrames]);
 
   // File import handlers
@@ -536,12 +603,14 @@ export const BitmapEditor = () => {
       } else if (extension === "png") {
         parsePNG(file);
       } else {
-        alert("This file type is not supported. Please upload a .bmp (24-bit) or .png image.");
+        alert(
+          "This file type is not supported. Please upload a .bmp (24-bit) or .png image.",
+        );
       }
 
       event.target.value = "";
     },
-    []
+    [],
   );
 
   const parseBMP = useCallback((bytes: Uint8Array) => {
@@ -552,7 +621,7 @@ export const BitmapEditor = () => {
 
     if (depth !== 24) {
       alert(
-        "Only 24-bit BMP files are supported. Please convert your BMP file to a 24-bit depth bitmap."
+        "Only 24-bit BMP files are supported. Please convert your BMP file to a 24-bit depth bitmap.",
       );
       return;
     }
@@ -629,18 +698,24 @@ export const BitmapEditor = () => {
   }, []);
 
   return (
-    <div className="Page BitmapPage grid" onMouseUp={stopDraw} onMouseLeave={stopDraw}>
+    <div
+      className="Page BitmapPage grid"
+      onMouseUp={stopDraw}
+      onMouseLeave={stopDraw}
+    >
       {/* Canvas Panel */}
       <Panel
         className="canvas-panel"
         header={
           <div className="canvas-size-controls">
-            <label htmlFor="inputWidth">Canvas Size:</label>
+            <label htmlFor="inputWidth">
+              <Trans>Canvas Size:</Trans>
+            </label>
             <input
               ref={widthInputRef}
               id="inputWidth"
               type="text"
-              placeholder="width"
+              placeholder={t`width`}
               maxLength={3}
               defaultValue={width}
             />
@@ -649,24 +724,32 @@ export const BitmapEditor = () => {
               ref={heightInputRef}
               id="inputHeight"
               type="text"
-              placeholder="height"
+              placeholder={t`height`}
               maxLength={3}
               defaultValue={height}
             />
-            <label htmlFor="pixelSize">Pixel size:</label>
+            <label htmlFor="pixelSize">
+              <Trans>Pixel size:</Trans>
+            </label>
             <input
               ref={pixelSizeInputRef}
               id="pixelSize"
               type="text"
-              placeholder="px"
+              placeholder={t`px`}
               maxLength={2}
               defaultValue={pixelSize}
             />
-            <button onClick={handleResize} title="Resize Canvas Preserving Upper-left Contents">
-              Resize
+            <button
+              onClick={handleResize}
+              title={t`Resize Canvas Preserving Upper-left Contents`}
+            >
+              <Trans>Resize</Trans>
             </button>
-            <button onClick={handleReset} title="Reset Canvas Size, Settings, and Clear Contents">
-              Reset
+            <button
+              onClick={handleReset}
+              title={t`Reset Canvas Size, Settings, and Clear Contents`}
+            >
+              <Trans>Reset</Trans>
             </button>
           </div>
         }
@@ -681,7 +764,11 @@ export const BitmapEditor = () => {
               <tr>
                 <td></td>
                 {Array.from({ length: width }, (_, j) => (
-                  <td key={`col-${j}`} className="col-label" style={{ fontSize: `${pixelSize * 0.6}px` }}>
+                  <td
+                    key={`col-${j}`}
+                    className="col-label"
+                    style={{ fontSize: `${pixelSize * 0.6}px` }}
+                  >
                     {j + 1}
                   </td>
                 ))}
@@ -689,14 +776,18 @@ export const BitmapEditor = () => {
               {/* Grid rows */}
               {Array.from({ length: height }, (_, i) => (
                 <tr key={`row-${i}`}>
-                  <td className="row-label" style={{ fontSize: `${pixelSize * 0.6}px` }}>
+                  <td
+                    className="row-label"
+                    style={{ fontSize: `${pixelSize * 0.6}px` }}
+                  >
                     {i + 1}
                   </td>
                   {Array.from({ length: width }, (_, j) => (
                     <td
                       key={`cell-${i}-${j}`}
-                      className={`cell ${grid[i]?.[j] ? "filled" : "empty"} ${wordEdgeColumns.has(j) ? "word-edge" : ""
-                        }`}
+                      className={`cell ${grid[i]?.[j] ? "filled" : "empty"} ${
+                        wordEdgeColumns.has(j) ? "word-edge" : ""
+                      }`}
                       style={{ width: pixelSize, height: pixelSize }}
                       onMouseDown={() => startDraw(i, j)}
                       onMouseOver={() => moveDraw(i, j)}
@@ -718,22 +809,18 @@ export const BitmapEditor = () => {
               className={`tab-button ${codeMode === "jack" ? "active" : ""}`}
               onClick={() => setCodeMode("jack")}
             >
-              Generated Jack Code
+              <Trans>Generated Jack Code</Trans>
             </button>
             <button
               className={`tab-button ${codeMode === "hack" ? "active" : ""}`}
               onClick={() => setCodeMode("hack")}
             >
-              Generated Hack Assembly
+              <Trans>Generated Hack Assembly</Trans>
             </button>
           </div>
         }
       >
-        <textarea
-          className="generated-code"
-          readOnly
-          value={generatedCode}
-        />
+        <textarea className="generated-code" readOnly value={generatedCode} />
       </Panel>
 
       {/* Controls Panel */}
@@ -749,27 +836,41 @@ export const BitmapEditor = () => {
           />
           <button
             onClick={() => fileInputRef.current?.click()}
-            title="Import BMP (24-bit) or PNG (black and white) file"
+            title={t`Import BMP (24-bit) or PNG (black and white) file`}
           >
-            Import Image
+            <Trans>Import Image</Trans>
           </button>
 
           <div className="button-group">
-            <button onClick={shiftLeft}>Shift left &lt;</button>
-            <button onClick={shiftRight}>Shift right &gt;</button>
-            <button onClick={shiftUp}>Shift up ^</button>
-            <button onClick={shiftDown}>Shift down v</button>
-            <button onClick={clearShifting}>Clear Shifting</button>
+            <button onClick={shiftLeft}>
+              <Trans>Shift left &lt;</Trans>
+            </button>
+            <button onClick={shiftRight}>
+              <Trans>Shift right &gt;</Trans>
+            </button>
+            <button onClick={shiftUp}>
+              <Trans>Shift up ^</Trans>
+            </button>
+            <button onClick={shiftDown}>
+              <Trans>Shift down v</Trans>
+            </button>
+            <button onClick={clearShifting}>
+              <Trans>Clear Shifting</Trans>
+            </button>
           </div>
 
           <div className="spacer" />
 
           <div className="button-group">
             <button onClick={rotateBitmapRight} disabled={width !== height}>
-              Rotate right
+              <Trans>Rotate right</Trans>
             </button>
-            <button onClick={mirrorBitmap}>Flip horizontally</button>
-            <button onClick={invertBitmap}>Invert</button>
+            <button onClick={mirrorBitmap}>
+              <Trans>Flip horizontally</Trans>
+            </button>
+            <button onClick={invertBitmap}>
+              <Trans>Invert</Trans>
+            </button>
           </div>
 
           <div className="checkbox-group">
@@ -779,7 +880,7 @@ export const BitmapEditor = () => {
                 checked={invertMode}
                 onChange={(e) => setInvertMode(e.target.checked)}
               />
-              Inverted Mode
+              <Trans>Inverted Mode</Trans>
             </label>
           </div>
 
@@ -792,7 +893,7 @@ export const BitmapEditor = () => {
                 checked={pauseCode}
                 onChange={(e) => setPauseCode(e.target.checked)}
               />
-              Pause Code Generation
+              <Trans>Pause Code Generation</Trans>
             </label>
             <label>
               <input
@@ -800,7 +901,7 @@ export const BitmapEditor = () => {
                 checked={comments}
                 onChange={(e) => setComments(e.target.checked)}
               />
-              Comments On
+              <Trans>Comments On</Trans>
             </label>
             <label>
               <input
@@ -808,7 +909,7 @@ export const BitmapEditor = () => {
                 checked={obviousStyling}
                 onChange={(e) => setObviousStyling(e.target.checked)}
               />
-              Obvious Word Edges
+              <Trans>Obvious Word Edges</Trans>
             </label>
           </div>
         </div>
@@ -823,7 +924,7 @@ export const BitmapEditor = () => {
                 checked={marginType === "fitToDrawing"}
                 onChange={() => setMarginType("fitToDrawing")}
               />
-              Fit to drawing
+              <Trans>Fit to drawing</Trans>
             </label>
             <label>
               <input
@@ -832,7 +933,7 @@ export const BitmapEditor = () => {
                 checked={marginType === "rectangular"}
                 onChange={() => setMarginType("rectangular")}
               />
-              Rectangular
+              <Trans>Rectangular</Trans>
             </label>
             <label>
               <input
@@ -841,13 +942,15 @@ export const BitmapEditor = () => {
                 checked={marginType === "fullCanvas"}
                 onChange={() => setMarginType("fullCanvas")}
               />
-              Full Canvas
+              <Trans>Full Canvas</Trans>
             </label>
           </div>
 
           {marginType === "fitToDrawing" && (
             <div className="input-group">
-              <label htmlFor="marginSaveFrames"># horizontal shifts per animation frame:</label>
+              <label htmlFor="marginSaveFrames">
+                <Trans># horizontal shifts per animation frame:</Trans>
+              </label>
               <input
                 ref={marginFramesInputRef}
                 id="marginSaveFrames"
@@ -862,7 +965,9 @@ export const BitmapEditor = () => {
 
         {/* Row 3: Base address controls */}
         <div className="control-row">
-          <span>Base address:</span>
+          <span>
+            <Trans>Base address:</Trans>
+          </span>
           <div className="radio-group">
             <label>
               <input
@@ -871,7 +976,7 @@ export const BitmapEditor = () => {
                 checked={baseTopLeft}
                 onChange={() => setBaseTopLeft(true)}
               />
-              Top Left
+              <Trans>Top Left</Trans>
             </label>
             <label>
               <input
@@ -880,7 +985,7 @@ export const BitmapEditor = () => {
                 checked={!baseTopLeft}
                 onChange={() => setBaseTopLeft(false)}
               />
-              Bottom Left
+              <Trans>Bottom Left</Trans>
             </label>
           </div>
         </div>

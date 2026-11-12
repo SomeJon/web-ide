@@ -12,6 +12,7 @@ import {
 
 import "./chip.scss";
 
+import { isErr, Ok } from "@davidsouther/jiffies/result.ts";
 import { makeVisualizationsWithId } from "@nand2tetris/components/chips/visualizations.js";
 import { Clockface } from "@nand2tetris/components/clockface.js";
 import {
@@ -24,14 +25,13 @@ import { BaseContext } from "@nand2tetris/components/stores/base.context.js";
 import { hasBuiltinChip } from "@nand2tetris/simulator/chip/builtins/index.js";
 import { HDL } from "@nand2tetris/simulator/languages/hdl.js";
 import { Timer } from "@nand2tetris/simulator/timer.js";
-import { isErr, Ok } from "@davidsouther/jiffies/lib/esm/result.js";
-import { TestPanel } from "../shell/test_panel";
 import { AppContext } from "../App.context";
-import { PageContext } from "../Page.context";
 import { registerCustomChip, resetCustomChips } from "../languages/hdl";
 import { reloadHdlLanguage } from "../languages/loader";
+import { PageContext } from "../Page.context";
 import { Editor } from "../shell/editor";
 import { Accordian, Panel } from "../shell/panel";
+import { TestPanel } from "../shell/test_panel";
 import { zip } from "../shell/zip";
 
 interface CompileInput {
@@ -70,7 +70,10 @@ export const Chip = () => {
       let changed = resetCustomChips();
 
       for (const file of files) {
-        const chipNameFromPath = file.name.split("/").pop()?.replace(".hdl", "");
+        const chipNameFromPath = file.name
+          .split("/")
+          .pop()
+          ?.replace(".hdl", "");
 
         if (chipNameFromPath && hasBuiltinChip(chipNameFromPath)) {
           continue;
@@ -106,9 +109,11 @@ export const Chip = () => {
     };
 
     scanAndRegister();
-    
+
     // Cleanup function
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [tstDir, actions]);
 
   useEffect(() => {
@@ -149,7 +154,7 @@ export const Chip = () => {
     actions.reset();
   }, [tst, cmp, tstDir]);
 
-  const runner = useRef<Timer>();
+  const runner = useRef<Timer | undefined>(undefined);
   useEffect(() => {
     runner.current = new (class ChipTimer extends Timer {
       async reset(): Promise<void> {
@@ -220,7 +225,7 @@ export const Chip = () => {
     <>
       <fieldset
         role="group"
-        data-tooltip="Open an HDL file using this menu"
+        data-tooltip={t`Open an HDL file using this menu`}
         data-placement="bottom"
       >
         <select
@@ -285,7 +290,7 @@ export const Chip = () => {
           <div className="flex-4">{selectors}</div>
           <fieldset role="group">
             <button
-              data-tooltip="Open an HDL file directly"
+              data-tooltip={t`Open an HDL file directly`}
               data-placement="bottom"
               onClick={loadFile}
             >
